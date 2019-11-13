@@ -1,15 +1,22 @@
 package io.taucoin;
 
+import com.google.gson.JsonObject;
 import io.ipfs.api.IPFS;
+import io.ipfs.api.JSONParser;
+import io.ipfs.api.MerkleNode;
 import io.ipfs.api.Peer;
+import io.ipfs.api.cbor.CborObject;
+import io.ipfs.cid.Cid;
 import io.ipfs.multiaddr.MultiAddress;
 import io.ipfs.multihash.Multihash;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,6 +66,78 @@ public class TestIpfs {
         for (MultiAddress multiAddress : multiAddressList) {
             logger.info("bootstrap: {}", multiAddress.toString());
         }
+    }
+
+    @Test
+    public void testMerkleDAG() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("data", "hello");
+//        String original = "{\"data\":1234}";
+//        byte[] object = original.getBytes();
+        byte[] object = jsonObject.toString().getBytes();
+        MerkleNode put = ipfs.dag.put("json", object);
+
+//        Cid expected = Cid.decode("zdpuAs3whHmb9T1NkHSLGF45ykcKrEBxSLiEx6YpLzmKbQLEB");
+
+        Multihash result = put.hash;
+        logger.info("{}", result.toString());
+//        Assert.assertTrue("Correct cid returned", result.equals(expected));
+//
+//        byte[] get = ipfs.dag.get(expected);
+//        Assert.assertTrue("Raw data equal", original.equals(new String(get).trim()));
+    }
+
+    @Test
+    public void testdagCbor() throws IOException {
+        Map<String, CborObject> tmp = new LinkedHashMap<>();
+        tmp.put("version", new CborObject.CborString("1"));
+//        tmp.put("option", new CborObject.CborString("2"));
+        CborObject original = CborObject.CborMap.build(tmp);
+        byte[] object = original.toByteArray();
+        MerkleNode put = ipfs.dag.put("cbor", object);
+
+        Cid cid = (Cid) put.hash;
+        logger.info("cid:{}", cid.toString());
+
+//        byte[] get = ipfs.dag.get(cid);
+//        logger.info("{}", ((Map) JSONParser.parse(new String(get))).get("version"));
+    }
+
+    @Test
+    public void dag() throws IOException {
+        String original = "{\"data\":1234}";
+        byte[] object = original.getBytes();
+        MerkleNode put = ipfs.dag.put("json", object);
+
+        Cid expected = Cid.decode("zdpuAs3whHmb9T1NkHSLGF45ykcKrEBxSLiEx6YpLzmKbQLEB");
+
+        Multihash result = put.hash;
+        Assert.assertTrue("Correct cid returned", result.equals(expected));
+
+        byte[] get = ipfs.dag.get(expected);
+        Assert.assertTrue("Raw data equal", original.equals(new String(get).trim()));
+    }
+
+    @Test
+    public void dagCbor() throws IOException {
+        Map<String, CborObject> tmp = new LinkedHashMap<>();
+        String value = "G'day mate!";
+        tmp.put("data", new CborObject.CborString(value));
+        CborObject original = CborObject.CborMap.build(tmp);
+        byte[] object = original.toByteArray();
+        MerkleNode put = ipfs.dag.put("cbor", object);
+
+        Cid cid = (Cid) put.hash;
+
+        byte[] get = ipfs.dag.get(cid);
+        Assert.assertTrue("Raw data equal", ((Map) JSONParser.parse(new String(get))).get("data").equals(value));
+
+        Cid expected = Cid.decode("zdpuApemz4XMURSCkBr9W5y974MXkSbeDfLeZmiQTPpvkatFF");
+        Assert.assertTrue("Correct cid returned", cid.equals(expected));
+    }
+
+    @Test
+    public void testTransactionDAG() throws Exception {
     }
 
 }
