@@ -104,6 +104,41 @@ public class TestIpfs {
     }
 
     @Test
+    public void issue() throws Exception {
+
+        try {
+            IPFS ipfs = new IPFS("localhost", 5001);
+
+            // JSON document
+            String json = "{\"name\":\"blogpost\",\"documents\":[]}";
+            logger.info("json: {}", json);
+
+            // Add a DAG node to IPFS
+            MerkleNode merkleNode = ipfs.dag.put("json", json.getBytes());
+            logger.info("store [json: {}] - {}", json, merkleNode.toJSON());
+            Assert.assertEquals("expected to be zdpuAknRh1Kro2r2xBDKiXyTiwA3Nu5XcmvjRPA1VNjH41NF7" , "zdpuAvQHo4UMMFvGiYJ5yptX4JFZtX77jz457ebwQiToG26TJ", merkleNode.hash.toString());
+
+            // Get a DAG node
+            byte[] res = ipfs.dag.get(Cid.buildCidV0(merkleNode.hash));
+            logger.info("fetch({}): {}", merkleNode.hash.toString(), new String(res));
+            Assert.assertEquals("Should be equals", json, new String(res));
+
+            // Publish to IPNS
+            Map result = ipfs.name.publish(merkleNode.hash);
+            logger.info("result {}", result);
+
+            // Resolve from IPNS
+            String resolved = ipfs.name.resolve(Multihash.fromBase58((String) result.get("Name")));
+            logger.info("resolved {}", resolved);
+            Assert.assertEquals("Should be equals", resolved, merkleNode.hash.toBase58());
+
+        } catch(Exception e) {
+            logger.error("Error", e);
+            throw e;
+        }
+    }
+
+    @Test
     public void dag() throws IOException {
         String original = "{\"data\":1234}";
         byte[] object = original.getBytes();
