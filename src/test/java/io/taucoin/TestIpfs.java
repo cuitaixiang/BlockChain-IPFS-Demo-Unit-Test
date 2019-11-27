@@ -29,9 +29,26 @@ public class TestIpfs {
 
     @Test
     public void testPeer() throws IOException {
-        List<Peer> swarmPeers = ipfs.swarm.peers();
-        for (Peer peer : swarmPeers) {
-            logger.info("Peer: {}, id:{}", peer.toString(), peer.id);
+        try {
+            List<Peer> swarmPeers = ipfs.swarm.peers();
+            if (null != swarmPeers) {
+                for (Peer peer : swarmPeers) {
+                    logger.info("Peer: {}, id:{}", peer.toString(), peer.id);
+                }
+            } else {
+                logger.error("List is Null!");
+            }
+        } catch (NullPointerException e) {
+            logger.error("No peers!");
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void testBootstrapNullException() throws IOException {
+        List<MultiAddress> multiAddressList = ipfs.bootstrap.list();
+        for (MultiAddress multiAddress : multiAddressList) {
+            logger.info("Bootstrap:{}", multiAddress);
         }
     }
 
@@ -45,19 +62,73 @@ public class TestIpfs {
 
     @Test
     public void testPubsubSubNonSync() throws Exception {
-        logger.info("----------sub start-------------");
-        Stream<Map<String, Object>> sub = ipfs.pubsub.sub("idc");
-        logger.info("----------sub end-------------");
-        List<Map> results = sub.limit(1).collect(Collectors.toList());
-        logger.info("----------1-------------");
-        Map msg = results.get(0);
-        logger.info("----------2-------------");
+        while (true) {
+
+            Stream<Map<String, Object>> sub = ipfs.pubsub.sub("idc");
+
+            List<Map> results = sub.limit(1).collect(Collectors.toList());
+
+            Map msg = results.get(0);
+
 //        String from = Base58.encode(Base64.getDecoder().decode(msg.get("from").toString()));
 //                    String topicId = msg.get("topicIDs").toString();
 //                    String seqno = new BigInteger(Base64.getDecoder().decode(msg.get("seqno").toString())).toString();
-        String data = new String(Base64.getDecoder().decode(msg.get("data").toString()));
-        logger.info("sub size:{} cid:{}", results.size(), data);
+            String data = new String(Base64.getDecoder().decode(msg.get("data").toString()));
+//            logger.info("Sleep.......");
+//            Thread.sleep(5000);
+            logger.info("sub size:{} data:{}", results.size(), data);
+            Thread.sleep(2000);
 //        Assert.assertTrue( ! results.get(0).equals(Collections.emptyMap()));
+        }
+    }
+
+    @Test
+    public void testInterruptPubsubSubNonSync() {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    logger.info("----------sub start-------------");
+                    Stream<Map<String, Object>> sub = ipfs.pubsub.sub("idc");
+                    logger.info("----------sub end-------------");
+                    List<Map> results = sub.limit(1).collect(Collectors.toList());
+                    logger.info("----------1-------------");
+                    Map msg = results.get(0);
+                    logger.info("----------2-------------");
+            //        String from = Base58.encode(Base64.getDecoder().decode(msg.get("from").toString()));
+            //                    String topicId = msg.get("topicIDs").toString();
+            //                    String seqno = new BigInteger(Base64.getDecoder().decode(msg.get("seqno").toString())).toString();
+                    String data = new String(Base64.getDecoder().decode(msg.get("data").toString()));
+                    logger.info("Sleep.......");
+                    Thread.sleep(5000);
+                    logger.info("sub size:{} cid:{}", results.size(), data);
+            //        Assert.assertTrue( ! results.get(0).equals(Collections.emptyMap()));
+                } catch (InterruptedException e) {
+                    logger.info("000000000000000000");
+                    logger.info(e.getMessage(), e);
+                } catch (IOException e) {
+                    logger.info("111111111111111111");
+                    logger.error(e.getMessage(), e);
+                } catch (RuntimeException e) {
+                    logger.info("2222222222222222");
+                    logger.error(e.getMessage(), e);
+                } catch (Exception e) {
+                    logger.info("333333333333333333");
+                    logger.error(e.getMessage(), e);
+                }
+            }
+        });
+        try {
+            thread.start();
+            Thread.sleep(3000);
+            logger.info("----------------");
+            thread.interrupt();
+            Thread.sleep(1000);
+            logger.info("Alive:{}", thread.isAlive());
+        } catch (Exception e) {
+            logger.info("444444444444444444");
+            logger.error(e.getMessage(), e);
+        }
     }
 
     @Test
