@@ -9,16 +9,14 @@ import io.ipfs.api.cbor.CborObject;
 import io.ipfs.cid.Cid;
 import io.ipfs.multiaddr.MultiAddress;
 import io.ipfs.multihash.Multihash;
+import io.taucoin.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -244,6 +242,34 @@ public class TestIpfs {
 
     @Test
     public void testTransactionDAG() throws Exception {
+    }
+
+    @Test
+    public void testPin() {
+        try {
+            Cid cid = Cid.decode("QmYukC9ZsvbYwiVhqSMGTdK8ePGERjtb9KuRYBZGUniNmd");
+            ipfs.pin.add(cid);
+            ipfs.pin.rm(cid);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void testPinMultiHash() {
+        try {
+            byte[] encoded = {0, 1, 2};
+            Multihash multihash = new Multihash(Multihash.Type.sha2_256, HashUtil.sha256(encoded));
+            Cid cid = Cid.buildCidV0(multihash);
+            List<byte[]> list = new ArrayList<>(1);
+            list.add(encoded);
+            List<MerkleNode> merkleNodeList = ipfs.block.put(list);
+
+            ipfs.pin.add(cid);
+            ipfs.pin.rm(cid);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
 }

@@ -26,6 +26,49 @@ public class TestJava {
         }
     };
 
+    private void sleepLoop() {
+//        while (true) {
+            try {
+                logger.info("Sleep...");
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.info("-----interrupt-----");
+                logger.info(e.getMessage(), e);
+//                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+//        }
+    }
+
+    Runnable sleepLoopRunnable = new Runnable() {
+        @Override
+        public void run() {
+            logger.info("------------");
+            while (!Thread.currentThread().isInterrupted()) {
+                sleepLoop();
+            }
+        }
+    };
+
+    @Test
+    public void testInterrupt() {
+        Thread thread = new Thread(sleepLoopRunnable, "sleepLoop");
+        thread.start();
+        try {
+            Thread.sleep(5000);
+            thread.interrupt();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
     @Test
     public void testScheduledThreadPool() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3);
