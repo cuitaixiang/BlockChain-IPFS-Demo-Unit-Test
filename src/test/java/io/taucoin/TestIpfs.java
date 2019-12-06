@@ -59,6 +59,38 @@ public class TestIpfs {
     }
 
     @Test
+    public void testPubsubSubSync() {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    logger.info("start to sub...");
+                    ipfs.pubsub.sub("idc");
+                    logger.info("sub end...");
+                } catch (Exception e) {
+                    logger.info(e.getMessage(), e);
+                }
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            logger.info(e.getMessage(), e);
+        }
+        thread.interrupt();
+
+        try {
+            thread.join();
+        } catch (Exception e) {
+            logger.info(e.getMessage(), e);
+        }
+
+
+    }
+
+    @Test
     public void testPubsubSubNonSync() throws Exception {
         while (true) {
 
