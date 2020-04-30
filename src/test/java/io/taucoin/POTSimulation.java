@@ -42,6 +42,9 @@ public class POTSimulation {
         BigInteger maxTimeInterval = BigInteger.ZERO;
         BigInteger totalTimeInterval = BigInteger.ZERO;
 
+        // hit > target
+        // target = base target * power * time interval
+        // hit = func(generationSignature)
         int N = 1000000;
         for (int i = 0; i < N; i++) {
             // get a public key
